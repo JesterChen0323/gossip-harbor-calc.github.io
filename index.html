@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gossip Harbor Energy Calculator</title>
     
-    <link rel="preload" href="img/breadL1.webp" as="image">
-    <link rel="preload" href="img/potatoL1.webp" as="image">
-    <link rel="preload" href="img/coffeeL1.webp" as="image">
-    <link rel="preload" href="img/teaL1.webp" as="image">
-    <link rel="preload" href="img/seafoodL1.webp" as="image">
-    <link rel="preload" href="img/orangeL1.webp" as="image">
-    <link rel="preload" href="img/floatieL1.webp" as="image">
-    <link rel="preload" href="img/swimmingL1.webp" as="image">
-    <link rel="preload" href="img/seashellL1.webp" as="image">
+    <link rel="preload" href="img/breadL3.webp" as="image">
+    <link rel="preload" href="img/potatoL3.webp" as="image">
+    <link rel="preload" href="img/coffeeL3.webp" as="image">
+    <link rel="preload" href="img/teaL3.webp" as="image">
+    <link rel="preload" href="img/seafoodL3.webp" as="image">
+    <link rel="preload" href="img/orangeL3.webp" as="image">
+    <link rel="preload" href="img/floatieL3.webp" as="image">
+    <link rel="preload" href="img/swimmingL3.webp" as="image">
+    <link rel="preload" href="img/seashellL3.webp" as="image">
 
     <style>
         :root {
@@ -21,6 +21,7 @@
             --surface: #1e1e1e;
             --primary: #bb86fc;
             --success: #03dac6;
+            --warning: #ffb74d;
             --text-main: #e0e0e0;
             --text-muted: #9e9e9e;
             --danger: #cf6679;
@@ -28,11 +29,20 @@
         body {
             margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif;
             background: var(--bg-color); color: var(--text-main);
-            padding-bottom: 120px; /* 配合底部固定區域高度調整 */
+            padding-bottom: 140px;
         }
-        h2, h3 { margin-top: 0; padding: 0 16px; font-size: 16px; color: var(--text-muted); }
+        h2, h3 { margin: 0; font-size: 16px; color: var(--text-muted); }
         .section { padding: 16px 0; margin-bottom: 8px; background: var(--surface); border-bottom: 1px solid #2a2a2a; }
         
+        /* 頂部標題列與清除按鈕 */
+        .section-header { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; }
+        .clear-btn {
+            background: none; border: 1px solid var(--danger); color: var(--danger);
+            padding: 6px 14px; border-radius: 20px; cursor: pointer;
+            font-size: 13px; font-weight: 600; transition: all 0.2s;
+        }
+        .clear-btn:hover { background: var(--danger); color: #fff; }
+
         .item-icon { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 
         /* 訂單槽 */
@@ -41,7 +51,6 @@
             width: 80px; height: 80px; border: 2px dashed #444; border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             position: relative; background: #252525; padding: 4px; box-sizing: border-box; flex-shrink: 0;
-            transition: border-color 0.2s;
         }
         .slot.filled { border-style: solid; border-color: var(--primary); background: #2c2c2c; }
         .slot .remove {
@@ -65,34 +74,53 @@
         .level-item {
             aspect-ratio: 1; border: 1px solid #444; border-radius: 12px; padding: 6px; box-sizing: border-box;
             display: flex; align-items: center; justify-content: center; cursor: pointer; background: #252525;
-            position: relative; transition: background 0.2s;
+            position: relative;
         }
-        .level-item:active { background: #333; }
         .level-item::after {
             content: attr(data-level); position: absolute; bottom: 4px; right: 6px;
             font-size: 11px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
         }
 
-        /* 庫存區 */
+        /* 通用包裝區 */
         .inv-wrapper { padding: 0 16px; }
         .inv-group { margin-bottom: 12px; border: 1px solid #333; border-radius: 12px; padding: 12px; background: #222; }
         .inv-title { font-weight: 600; margin-bottom: 12px; color: var(--primary); text-transform: capitalize; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+        
+        /* 庫存行與大螢幕響應式多欄網格卡片化 */
+        .inv-grid { display: block; }
         .inv-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
         .inv-row:last-child { margin-bottom: 0; }
         .inv-icon { width: 36px; height: 36px; object-fit: contain; }
         .inv-level-label { width: 32px; font-size: 14px; color: #ccc; }
+        
         .inv-controls { display: flex; align-items: center; gap: 6px; margin-left: auto; }
         .inv-controls button {
             width: 36px; height: 36px; background: #333; border: none; color: white;
             border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
-        .inv-controls button:active { background: #444; }
         .inv-controls input {
             width: 50px; height: 36px; text-align: center; background: #121212; color: white;
             border: 1px solid #444; border-radius: 8px; font-size: 16px; font-weight: 600;
         }
 
-        /* 輸出區 (浮動置底) */
+        /* 跨裝置 RWD 佈局優化 (寬螢幕調整) */
+        @media (min-width: 768px) {
+            .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+            .inv-row { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; padding: 10px; margin-bottom: 0; }
+            .inv-controls { margin-left: auto; }
+            
+            #deficitContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+            .deficit-card { margin-bottom: 0 !important; }
+        }
+
+        /* 缺少 LV3 追蹤器卡片 */
+        .deficit-card { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: #1a1a1a; border: 1px solid #2d2d2d; border-radius: 12px; margin-bottom: 8px; }
+        .deficit-card:last-child { margin-bottom: 0; }
+        .deficit-info { display: flex; flex-direction: column; gap: 2px; }
+        .deficit-name { font-size: 14px; font-weight: 600; text-transform: capitalize; }
+        .deficit-metric { font-size: 16px; font-weight: 700; color: var(--warning); margin-left: auto; }
+
+        /* 固定底部結算輸出區 */
         .output-area {
             position: fixed; bottom: 0; left: 0; right: 0; background: #1e1e1ede;
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -104,25 +132,64 @@
         .result-energy { font-size: 32px; font-weight: 800; color: var(--primary); margin: 0; line-height: 1; }
         .result-time { font-size: 18px; font-weight: 600; color: var(--success); margin: 0; }
         
-        .empty-state { color: #666; font-size: 14px; text-align: center; padding: 24px; background: #1a1a1a; border-radius: 12px; border: 1px dashed #333; }
+        .empty-state { color: #666; font-size: 14px; text-align: center; padding: 24px; background: #1a1a1a; border-radius: 12px; border: 1px dashed #333; width: 100%; box-sizing: border-box; }
+
+        /* Toast 自動消失提示框 */
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(207, 102, 121, 0.95); /* 使用現有的 --danger 主題色 */
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+            z-index: 200;
+            pointer-events: none; /* 防止阻擋下方的點擊事件 */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
 
     <div class="section">
-        <h3>1. 訂單目標 (Target Orders)</h3>
+        <div class="section-header">
+            <h3>1. 訂單目標 (Target Orders)</h3>
+            <button class="clear-btn" onclick="clearAllData()">清除所有資料</button>
+        </div>
         <div class="slots-container" id="slotsContainer"></div>
     </div>
 
     <div class="section">
-        <h3>2. 產線選擇 (Production Line)</h3>
+        <div class="section-header">
+            <h3>2. 產線選擇 (Production Line)</h3>
+        </div>
         <div class="selector" id="catSelector"></div>
         <div class="level-grid" id="levelSelector"></div>
     </div>
 
-    <div class="section" style="border-bottom: none;">
-        <h3>3. 庫存扣減 (Inventory Deduction)</h3>
+    <div class="section">
+        <div class="section-header">
+            <h3>3. 庫存扣減 (Inventory Deduction)</h3>
+        </div>
         <div class="inv-wrapper" id="inventoryContainer">
+            <div class="empty-state">請先於上方選擇訂單目標</div>
+        </div>
+    </div>
+
+    <div class="section" style="border-bottom: none;">
+        <div class="section-header">
+            <h3>4. 缺少 LV3 數量統計 (Missing LV3 Tracker)</h3>
+        </div>
+        <div class="inv-wrapper" id="deficitContainer">
             <div class="empty-state">請先於上方選擇訂單目標</div>
         </div>
     </div>
@@ -139,7 +206,6 @@
     </div>
 
 <script>
-// --- 核心演算法定義 ---
 const E_MAIN_BASE = 1.17;
 const E_SUB_BASE = 0.20;
 
@@ -156,9 +222,38 @@ const CATEGORIES = {
 };
 
 let currentOrder = [];
-let inventoryData = {}; // 格式: { category: { level: quantity } }
+let inventoryData = {}; 
 
-// 取得特定類別的淨 L1 需求量 (目標需求 - 庫存折算)
+// --- LocalStorage 持久化模組 ---
+function saveToLocalStorage() {
+    localStorage.setItem('gossip_orders', JSON.stringify(currentOrder));
+    localStorage.setItem('gossip_inventory', JSON.stringify(inventoryData));
+}
+
+function loadFromLocalStorage() {
+    try {
+        const storedOrders = localStorage.getItem('gossip_orders');
+        const storedInv = localStorage.getItem('gossip_inventory');
+        if (storedOrders) currentOrder = JSON.parse(storedOrders);
+        if (storedInv) inventoryData = JSON.parse(storedInv);
+    } catch (e) {
+        console.error("讀取快取失敗，重置資料結構", e);
+        currentOrder = [];
+        inventoryData = {};
+    }
+}
+
+function clearAllData() {
+    if (confirm('確定要清除所有暫存的訂單與庫存記錄嗎？')) {
+        localStorage.removeItem('gossip_orders');
+        localStorage.removeItem('gossip_inventory');
+        currentOrder = [];
+        inventoryData = {};
+        renderSlots();
+    }
+}
+
+// --- 核心演算法 ---
 function getNetL1Required(cat) {
     let totalL1Required = 0;
     currentOrder.filter(o => o.cat === cat).forEach(o => {
@@ -171,11 +266,9 @@ function getNetL1Required(cat) {
             totalL1Inventory += inventoryData[cat][lvl] * Math.pow(2, lvl - 1);
         });
     }
-
     return Math.max(0, totalL1Required - totalL1Inventory);
 }
 
-// 根據淨 L1 需求量估算耗能 (已移除 Boost，預設 x1)
 function estimateItemEnergy(targetLine, netL1Required) {
     if (targetLine === 'ORANGE' || netL1Required === 0) return 0;
 
@@ -186,23 +279,18 @@ function estimateItemEnergy(targetLine, netL1Required) {
     } else if (targetLine === 'SEAFOOD_LINE') {
         const generatorLevel = 5;
         const baseLifespan = 12;
-        
-        // 依據底層推論公式：生成器代價 + 點擊次數
         const energyPerGenerator = Math.ceil(Math.pow(2, generatorLevel - 1) / E_MAIN_BASE);
         const requiredClicks = Math.ceil(netL1Required / 1);
         const totalFishNeeded = Math.ceil(requiredClicks / baseLifespan);
         const fishBuildEnergy = totalFishNeeded * energyPerGenerator;
-        
         return fishBuildEnergy + requiredClicks;
     }
     return 0;
 }
 
-// 結算總耗能與時間映射
 function calculateOrderTotalEnergy() {
     let totalOrderEnergy = 0;
     const groups = {};
-
     const activeCats = [...new Set(currentOrder.map(o => o.cat))];
     
     activeCats.forEach(cat => {
@@ -217,7 +305,6 @@ function calculateOrderTotalEnergy() {
         else groups[catInfo.group].OTHER += energy;
     });
 
-    // 處理同源產線疊加邏輯
     for (const g in groups) {
         const group = groups[g];
         if (group.MAIN > 0 && group.SUB > 0) {
@@ -227,16 +314,12 @@ function calculateOrderTotalEnergy() {
         }
     }
 
-    // 更新 DOM：體力
     document.getElementById('totalEnergy').innerText = totalOrderEnergy;
 
-    // 更新 DOM：時間估算 (體力 x 2 分鐘)
     const timeElement = document.getElementById('estimatedTime');
     if (totalOrderEnergy > 0) {
         const targetDate = new Date();
         targetDate.setMinutes(targetDate.getMinutes() + (totalOrderEnergy * 2));
-        
-        // 格式化為 MM/DD HH:mm
         const options = { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
         timeElement.innerText = targetDate.toLocaleString('zh-TW', options).replace(',', '');
         timeElement.style.color = 'var(--success)';
@@ -247,7 +330,6 @@ function calculateOrderTotalEnergy() {
 }
 
 // --- 視圖層控制 ---
-
 function renderSlots() {
     const container = document.getElementById('slotsContainer');
     container.innerHTML = '';
@@ -265,11 +347,13 @@ function renderSlots() {
         container.appendChild(slot);
     }
     renderInventory();
+    renderDeficit();
     calculateOrderTotalEnergy();
 }
 
 function removeSlot(index) {
     currentOrder.splice(index, 1);
+    saveToLocalStorage();
     renderSlots();
 }
 
@@ -278,13 +362,22 @@ function renderCategories() {
     Object.keys(CATEGORIES).forEach(cat => {
         const btn = document.createElement('button');
         btn.className = 'cat-btn';
-        btn.innerHTML = `<img src="img/${cat}L1.webp" alt="${cat}"> <span>${cat}</span>`;
+        btn.innerHTML = `<img src="img/${cat}L3.webp" alt="${cat}"> <span>${cat}</span>`;
         btn.onclick = (e) => renderLevels(cat, e.currentTarget);
         container.appendChild(btn);
     });
 }
 
 function renderLevels(cat, targetBtn) {
+    // 1. 檢查訂單是否已滿
+    if (currentOrder.length >= 3) {
+        showToast('訂單已滿。');
+        // 確保防呆觸發時，面板維持清空與不亮燈狀態
+        document.getElementById('levelSelector').innerHTML = '';
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        return;
+    }
+
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     if (targetBtn) targetBtn.classList.add('active');
 
@@ -292,7 +385,7 @@ function renderLevels(cat, targetBtn) {
     container.innerHTML = '';
     const max = CATEGORIES[cat].maxLevel;
     
-    for(let i=1; i<=max; i++) {
+    for(let i=3; i<=max; i++) {
         const item = document.createElement('div');
         item.className = 'level-item';
         item.setAttribute('data-level', `L${i}`);
@@ -300,7 +393,12 @@ function renderLevels(cat, targetBtn) {
         item.onclick = () => {
             if(currentOrder.length < 3) {
                 currentOrder.push({ cat: cat, level: i });
+                saveToLocalStorage();
                 renderSlots();
+                
+                // 2. 產品成功加入訂單後，清除類別 Selected 狀態並隱藏產品面板
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                container.innerHTML = '';
             }
         };
         container.appendChild(item);
@@ -317,32 +415,75 @@ function renderInventory() {
         return;
     }
 
+    let dynamicRowsRendered = 0;
+
     activeCats.forEach(cat => {
-        // 取該類別在訂單中的最大等級，僅渲染該等級(含)以下的輸入框
         const maxOrderLevel = Math.max(...currentOrder.filter(o => o.cat === cat).map(o => o.level));
-        
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'inv-group';
-        groupDiv.innerHTML = `<div class="inv-title">${cat} Line</div>`;
+        const limitLevel = maxOrderLevel - 1;
         
         if(!inventoryData[cat]) inventoryData[cat] = {};
 
-        for(let i=1; i<=maxOrderLevel; i++) {
-            const val = inventoryData[cat][i] || 0;
-            const row = document.createElement('div');
-            row.className = 'inv-row';
-            row.innerHTML = `
-                <img src="img/${cat}L${i}.webp" class="inv-icon" alt="${cat} L${i}">
-                <span class="inv-level-label">L${i}</span>
-                <div class="inv-controls">
-                    <button onclick="updateInv('${cat}', ${i}, -1)">−</button>
-                    <input type="number" min="0" inputmode="numeric" value="${val}" onchange="setInv('${cat}', ${i}, this.value)">
-                    <button onclick="updateInv('${cat}', ${i}, 1)">＋</button>
-                </div>
+        if (limitLevel >= 3) {
+            dynamicRowsRendered++;
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'inv-group';
+            groupDiv.innerHTML = `
+                <div class="inv-title">${cat} Line</div>
+                <div class="inv-grid"></div>
             `;
-            groupDiv.appendChild(row);
+            const gridContainer = groupDiv.querySelector('.inv-grid');
+
+            for(let i=3; i<=limitLevel; i++) {
+                const val = inventoryData[cat][i] || 0;
+                const row = document.createElement('div');
+                row.className = 'inv-row';
+                row.innerHTML = `
+                    <img src="img/${cat}L${i}.webp" class="inv-icon" alt="${cat} L${i}">
+                    <span class="inv-level-label">L${i}</span>
+                    <div class="inv-controls">
+                        <button onclick="updateInv('${cat}', ${i}, -1)">−</button>
+                        <input type="number" min="0" inputmode="numeric" value="${val}" onchange="setInv('${cat}', ${i}, this.value)">
+                        <button onclick="updateInv('${cat}', ${i}, 1)">＋</button>
+                    </div>
+                `;
+                gridContainer.appendChild(row);
+            }
+            container.appendChild(groupDiv);
         }
-        container.appendChild(groupDiv);
+    });
+
+    if (dynamicRowsRendered === 0) {
+        container.innerHTML = '<div class="empty-state">目前訂單級別無符合條件之可扣減庫存階層(L3以上且低於最大等級)</div>';
+    }
+}
+
+function renderDeficit() {
+    const container = document.getElementById('deficitContainer');
+    container.innerHTML = '';
+    const activeCats = [...new Set(currentOrder.map(o => o.cat))];
+
+    if(activeCats.length === 0) {
+        container.innerHTML = '<div class="empty-state">請先於上方選擇訂單目標</div>';
+        return;
+    }
+
+    activeCats.forEach(cat => {
+        const netL1 = getNetL1Required(cat);
+        const missingL3 = Math.ceil(netL1 / 4);
+
+        const card = document.createElement('div');
+        card.className = 'deficit-card';
+        card.innerHTML = `
+            <img src="img/${cat}L3.webp" class="inv-icon" alt="${cat} L3">
+            <div class="deficit-info">
+                <span class="deficit-name">${cat}</span>
+                <span style="font-size: 12px; color: var(--text-muted);">淨需求折算 (L3)</span>
+            </div>
+            <div class="deficit-metric">
+                還差 <span>${missingL3}</span> 個
+            </div>
+        `;
+        container.appendChild(card);
     });
 }
 
@@ -351,15 +492,36 @@ function updateInv(cat, level, delta) {
     const next = Math.max(0, current + delta);
     setInv(cat, level, next);
     renderInventory();
+    renderDeficit();
 }
 
 function setInv(cat, level, value) {
     const parsed = parseInt(value, 10);
     inventoryData[cat][level] = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    saveToLocalStorage();
     calculateOrderTotalEnergy();
+    renderDeficit();
 }
 
-// 初始化
+function showToast(message) {
+    let toast = document.getElementById('globalToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'globalToast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    
+    toast.innerText = message;
+    toast.classList.add('show');
+    
+    // 2000 毫秒（2秒）後自動隱藏
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2000);
+}
+// --- 系統冷啟動初始化 ---
+loadFromLocalStorage();
 renderCategories();
 renderSlots();
 </script>
